@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "../display/framebuffer.h"
 
 #define MMIO_BASE       0x20000000u
 #define AUX_ENABLES     (*(volatile uint32_t *)(MMIO_BASE + 0x00215004u))
@@ -61,13 +62,14 @@ static void uart_puts(const char *s)
 void kernel_main(void)
 {
     uart_init();
+    bomb_fb_test_screen();
     uart_puts("\n");
     uart_puts("================================\n");
     uart_puts("          BOMB OS 0.01          \n");
     uart_puts("================================\n");
     uart_puts("Hello! This is your own C kernel.\n");
     uart_puts("Target: Raspberry Pi Zero v1.3 / ARMv6\n");
-    uart_puts("Next milestone: USB display + graphics.\n");
+    uart_puts("Framebuffer test pattern created in memory.\n");
 
     for (;;) {
         __asm__ volatile("wfi");
