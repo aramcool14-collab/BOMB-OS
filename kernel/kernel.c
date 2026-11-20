@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include "../display/video.h"
+#include "../desktop/desktop.h"
 #include "../display/framebuffer.h"
 
 #define MMIO_BASE       0x20000000u
@@ -17,9 +19,7 @@
 
 static void delay(volatile unsigned count)
 {
-    while (count--) {
-        __asm__ volatile("nop");
-    }
+    while (count--) __asm__ volatile("nop");
 }
 
 static void uart_init(void)
@@ -31,17 +31,14 @@ static void uart_init(void)
     AUX_MU_MCR = 0;
     AUX_MU_IIR = 0xC6;
     AUX_MU_BAUD = 270;
-
     GPFSEL1 &= ~((7u << 12) | (7u << 15));
     GPFSEL1 |=  ((2u << 12) | (2u << 15));
-
     GPPUD = 0;
     delay(150);
     GPPUDCLK0 = (1u << 14) | (1u << 15);
     delay(150);
     GPPUD = 0;
     GPPUDCLK0 = 0;
-
     AUX_MU_CNTL = 3;
 }
 
@@ -62,16 +59,19 @@ static void uart_puts(const char *s)
 void kernel_main(void)
 {
     uart_init();
-    bomb_fb_test_screen();
-    uart_puts("\n");
-    uart_puts("================================\n");
-    uart_puts("          BOMB OS 0.01          \n");
-    uart_puts("================================\n");
-    uart_puts("Hello! This is your own C kernel.\n");
-    uart_puts("Target: Raspberry Pi Zero v1.3 / ARMv6\n");
-    uart_puts("Framebuffer test pattern created in memory.\n");
+    uart_puts("\nBOMB OS booting on Raspberry Pi Zero v1.3...\n");
 
-    for (;;) {
-        __asm__ volatile("wfi");
+    if (bomb_video_init()) {
+        uart_puts("VideoCore framebuffer: OK (640x480x32)\n");
+        bomb_desktop_draw();
+        uart_puts("BOMB OS desktop drawn.\n");
+    } else {
+        uart_puts("VideoCore framebuffer: FAILED; check HDMI/firmware setup.\n");
+        bomb_fb_test_screen();
     }
+
+    uart_puts("UART debug: ready on GPIO14 TX / GPIO15 RX.\n");
+    uart_puts("USB, keyboard, timer interrupts, and SD filesystem are not active yet.\n");
+
+    for (;;) __asm__ volatile("wfi");
 }
