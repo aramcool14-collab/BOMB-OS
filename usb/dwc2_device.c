@@ -16,7 +16,6 @@
 #define GRXSTSP R(0x020)
 #define GRXFSIZ R(0x024)
 #define GNPTXFSIZ R(0x028)
-#define GDFIFOCFG R(0x05C)
 #define DCFG R(0x800)
 #define DCTL R(0x804)
 #define DSTS R(0x808)
@@ -153,7 +152,10 @@ static void start_control_data(const uint8_t *p,uint16_t length,uint16_t request
     ep0_send_next();
 }
 static void activate_data_endpoints(void) {
-    /* Dedicated FIFO 2: 128 words at word offset 256. */
+    static const uint8_t serial_state[10] = {
+        0xA1, 0x20, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00
+    };
+    /* Dedicated FIFO 2 carries the BOMB-LINK byte stream. */
     R(0x104)=(16u<<16)|256u;
     R(0x108)=(128u<<16)|272u;
     DIEPCTL(1)=EP_USBAEP|(3u<<18)|EP_TXFNUM(1)|8u;
@@ -162,6 +164,9 @@ static void activate_data_endpoints(void) {
     DIEPTSIZ(2)=0; DOEPTSIZ(2)=64u|(1u<<19);
     DOEPCTL(2)|=EP_CNAK|EP_EPENA;
     DAINTMSK|=(1u<<1)|(1u<<2)|(1u<<(16+2));
+    DIEPTSIZ(1)=(1u<<19)|sizeof(serial_state);
+    DIEPCTL(1)|=EP_CNAK|EP_EPENA;
+    fifo_write(1,serial_state,sizeof(serial_state));
 }
 static void set_configuration(uint8_t value) {
     configured=(value==1);
@@ -287,7 +292,7 @@ int bomb_usb_init(void) {
     GRSTCTL=(1u<<5); if(!wait_reg(0x010,1u<<5,0)) return 0;
     GRSTCTL=(1u<<4); if(!wait_reg(0x010,1u<<4,0)) return 0;
     DCFG=(DCFG&~7u)|3u;
-    GRXFSIZ=128u; GNPTXFSIZ=(128u<<16)|128u; GDFIFOCFG=(128u<<16)|256u;
+    GRXFSIZ=128u; GNPTXFSIZ=(128u<<16)|128u;
     DIEPMSK=EP_XFRC; DOEPMSK=EP_XFRC;
     DAINTMSK=1u|(1u<<16);
     GINTSTS=0xFFFFFFFFu;
