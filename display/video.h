@@ -10,5 +10,6 @@ void bomb_video_pixel(unsigned x, unsigned y, uint32_t color);
 unsigned bomb_video_width(void);
 unsigned bomb_video_height(void);
 int bomb_video_ready(void);
+void bomb_video_copy_rgb565(uint16_t *out, unsigned width, unsigned height);
 
 #endif
