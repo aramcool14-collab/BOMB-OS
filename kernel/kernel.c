@@ -45,8 +45,8 @@ void kernel_main(void) {
         bomb_fb_test_screen();
     }
     uart_puts("Starting USB OTG CDC device...\n");
-    bomb_usb_init();
-    uart_puts("USB controller initialized; waiting for host enumeration.\n");
+    if (bomb_usb_init()) uart_puts("USB controller ready; waiting for host enumeration.\n");
+    else uart_puts("USB controller initialization FAILED; check OTG port and power.\n");
     uart_puts("Connect the Pi Zero USB (data/OTG) port to the PC.\n");
     unsigned frame_wait=0;
     for(;;) {
