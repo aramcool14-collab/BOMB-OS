@@ -99,3 +99,20 @@ void bomb_video_clear(uint32_t color)
 unsigned bomb_video_width(void) { return FB_W; }
 unsigned bomb_video_height(void) { return FB_H; }
 int bomb_video_ready(void) { return ready; }
+
+/* Downsample the live 640x480 ARGB framebuffer to the USB viewer's RGB565 frame. */
+void bomb_video_copy_rgb565(uint16_t *out, unsigned width, unsigned height)
+{
+    if (!out || !ready || width == 0 || height == 0 || width > FB_W || height > FB_H) return;
+    for (unsigned y = 0; y < height; ++y) {
+        unsigned sy = (y * FB_H) / height;
+        const uint32_t *line = pixels + (sy * pitch_bytes) / 4u;
+        for (unsigned x = 0; x < width; ++x) {
+            uint32_t c = line[(x * FB_W) / width];
+            uint16_t r = (uint16_t)((c >> 19) & 0x1Fu);
+            uint16_t g = (uint16_t)((c >> 10) & 0x3Fu);
+            uint16_t b = (uint16_t)((c >> 3) & 0x1Fu);
+            out[y * width + x] = (uint16_t)((r << 11) | (g << 5) | b);
+        }
+    }
+}
