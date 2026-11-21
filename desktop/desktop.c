@@ -23,7 +23,7 @@ static uint16_t rgb565(uint32_t color)
 
 static void draw_rect(unsigned x, unsigned y, unsigned w, unsigned h, uint32_t color)
 {
-    if (bomb_video_ready()) if (bomb_video_ready()) bomb_video_rect(x, y, w, h, color);
+    if (bomb_video_ready()) bomb_video_rect(x, y, w, h, color);
     bomb_fb_rect(x / 2u, y / 2u, w / 2u, h / 2u, rgb565(color));
 }
 
