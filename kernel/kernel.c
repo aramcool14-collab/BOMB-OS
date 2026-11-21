@@ -38,9 +38,8 @@ void kernel_main(void) {
     uart_puts("\nBOMB OS booting on Raspberry Pi Zero v1.3...\n");
     if(bomb_video_init()) {
         uart_puts("VideoCore framebuffer: OK (640x480x32)\n");
-        uart_puts("VideoCore framebuffer: ready.\n");
     } else {
-        uart_puts("VideoCore framebuffer: FAILED; check HDMI/firmware setup.\n");
+        uart_puts("HDMI framebuffer unavailable; USB software desktop remains available.\n");
     }
     bomb_desktop_draw();
     uart_puts("BOMB OS desktop rendered to HDMI and USB framebuffers.\n");
