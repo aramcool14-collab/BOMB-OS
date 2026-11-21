@@ -29,7 +29,7 @@ arm-none-eabi-gcc %CFLAGS% -c usb\bomb_link.c -o build\bomb_link.o
 if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c usb\dwc2_device.c -o build\dwc2_device.o
 if errorlevel 1 goto failed
-arm-none-eabi-gcc %CFLAGS% -nostdlib -nostartfiles -Wl,-T,linker.ld -Wl,--build-id=none build\start.o build\kernel.o build\framebuffer.o build\video.o build\desktop.o build\bomb_link.o build\dwc2_device.o -o build\kernel.elf
+arm-none-eabi-gcc %CFLAGS% -nostdlib -nostartfiles -Wl,-T,linker.ld -Wl,--build-id=none build\start.o build\kernel.o build\framebuffer.o build\video.o build\desktop.o build\bomb_link.o build\dwc2_device.o -lgcc -o build\kernel.elf
 if errorlevel 1 goto failed
 arm-none-eabi-objcopy build\kernel.elf -O binary build\kernel.img
 if errorlevel 1 goto failed
