@@ -1,44 +1,64 @@
 # BOMB OS 💣
 
-A from-scratch operating-system project for the **Raspberry Pi Zero v1.3** (ARM1176JZF-S / ARMv6), written in C with a small ARM assembly startup file.
+A bare-metal operating-system experiment for the **Raspberry Pi Zero v1.3** (ARM1176JZF-S / ARMv6, 512 MB RAM).
 
-## Current stage
+## What is implemented
 
-**Milestone 0.01 — UART kernel starter**
+- ARMv6 startup, stack setup, and BSS clearing
+- Mini-UART debug output on GPIO14/15
+- VideoCore HDMI framebuffer desktop
+- A 320×240 RGB565 software framebuffer, so the desktop can also render when no HDMI display is attached
+- An experimental polling-mode DWC2 USB device driver with CDC-ACM descriptors
+- BOMB-LINK frame packets over USB serial
+- A Windows Forms viewer that reads the virtual COM port and displays the desktop
 
-- Starts at the Raspberry Pi's legacy ARM kernel load address.
-- Sets up a stack and clears the BSS section.
-- Initializes the Pi Zero mini UART.
-- Prints a BOMB OS startup message.
+**Important:** USB enumeration and screen streaming have not yet been verified on a physical Pi Zero. The USB driver is an in-progress bare-metal implementation, not a certified or production USB stack. The GitHub Actions workflow builds the ARM image; a successful compile does not prove the hardware link works.
 
-This is an early kernel starter, **not a finished operating system** and not yet a ready-to-flash SD-card image. It currently reports through the UART pins; it does not show a display over the normal USB cable.
+## Build the Pi image on Windows
 
-## Project files
+Install an ARM GNU toolchain containing `arm-none-eabi-gcc` and `arm-none-eabi-objcopy`, and add its `bin` folder to PATH.
 
-- `kernel/start.S` — ARM startup code
-- `kernel/kernel.c` — freestanding C kernel and UART output
-- `linker.ld` — kernel memory layout
-- `Makefile` — build rules for a GNU Make environment
-- `build.bat` — Windows Command Prompt build script
-- `boot/config.txt` — Raspberry Pi boot configuration
-
-## Build on Windows
-
-A Windows ARM cross-compiler is required. It must provide:
-
-- `arm-none-eabi-gcc`
-- `arm-none-eabi-objcopy`
-
-Install a Windows ARM GNU toolchain, add its `bin` folder to PATH, open Command Prompt in this folder, and run:
+From Command Prompt in the repository folder:
 
 ```bat
 build.bat
 ```
 
-The output should be `build\kernel.img`.
+The image is written to `build\kernel.img`. The same build is available with GNU Make using `make`.
 
-The source folder alone is **not** bootable. A working SD-card boot setup also needs the correct Raspberry Pi firmware files and a properly prepared FAT boot partition. Do not format your SD card for this starter yet.
+## Prepare the SD card
+
+Use the existing Raspberry Pi boot/FAT partition that already contains the matching firmware files (such as `bootcode.bin`, `start.elf`, and `fixup.dat`). Copy the newly built `build\kernel.img` to the root of that partition as `kernel.img`. The repository's `boot/config.txt` selects the 32-bit kernel image.
+
+Do not format the card or delete the firmware files just to install this kernel.
+
+## Connect the USB viewer
+
+1. Power the Pi Zero and boot it from the SD card.
+2. Connect the laptop to the Pi Zero micro-USB port labelled **USB** (the data/OTG port), not **PWR IN**.
+3. On Windows, build and run the viewer:
+
+```bat
+dotnet run --project viewer\BombViewer.csproj
+```
+
+4. Refresh the COM-port list, select the Pi's USB serial port, and press **Connect**.
+
+The viewer expects the BOMB-LINK packet format: a 12-byte `BOMB` header followed by a 320×240 RGB565 frame. The USB serial connection is separate from HDMI; HDMI is optional for the software-framebuffer desktop path.
+
+## Project layout
+
+- `kernel/start.S` — ARM startup
+- `kernel/kernel.c` — kernel entry, UART, USB polling, and frame streaming
+- `usb/dwc2_device.c` — DWC2 USB device-mode driver
+- `usb/bomb_link.c` — frame packet format
+- `display/framebuffer.c` — 320×240 software framebuffer
+- `display/video.c` — VideoCore HDMI framebuffer
+- `desktop/desktop.c` — BOMB OS desktop rendering
+- `viewer/Program.cs` — Windows screen viewer
+- `build.bat` — Windows build
+- `.github/workflows/build.yml` — ARM cross-build and image artifact
 
 ## Hardware target
 
-Raspberry Pi Zero v1.3 (original non-W model), ARMv6, 512 MB RAM.
+Original Raspberry Pi Zero v1.3 (not Zero 2 W). The USB data port is the OTG port; the PWR IN port is power-only.
