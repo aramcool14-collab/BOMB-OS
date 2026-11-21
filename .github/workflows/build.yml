@@ -1,0 +1,28 @@
+name: Build BOMB OS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM bare-metal toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi
+      - name: Compile Raspberry Pi Zero kernel
+        run: |
+          mkdir -p build
+          arm-none-eabi-gcc -mcpu=arm1176jzf-s -marm -mfloat-abi=soft -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -O2 -Wall -Wextra -nostdlib -nostartfiles -Wl,-T,linker.ld -Wl,--build-id=none kernel/start.S kernel/kernel.c display/framebuffer.c display/video.c desktop/desktop.c usb/bomb_link.c usb/dwc2_device.c -o build/kernel.elf
+          arm-none-eabi-objcopy build/kernel.elf -O binary build/kernel.img
+      - name: Upload kernel image
+        uses: actions/upload-artifact@v4
+        with:
+          name: bomb-os-kernel
+          path: build/kernel.img
