@@ -14,7 +14,7 @@ build:
 build/start.o: kernel/start.S | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/kernel.o: kernel/kernel.c display/video.h desktop/desktop.h display/framebuffer.h | build
+build/kernel.o: kernel/kernel.c display/video.h desktop/desktop.h display/framebuffer.h usb/dwc2_device.h usb/bomb_link.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/framebuffer.o: display/framebuffer.c display/framebuffer.h | build
@@ -33,7 +33,7 @@ build/dwc2_device.o: usb/dwc2_device.c usb/dwc2_device.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/kernel.elf: build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o build/dwc2_device.o linker.ld
-	$(CC) $(CFLAGS) $(LDFLAGS) build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o build/dwc2_device.o -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o build/dwc2_device.o -lgcc -o $@
 
 build/kernel.img: build/kernel.elf
 	$(OBJCOPY) $< -O binary $@
