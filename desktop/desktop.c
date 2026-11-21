@@ -1,4 +1,5 @@
 #include "../display/video.h"
+#include "../display/framebuffer.h"
 #include "desktop.h"
 
 #define C_BG       0xFF101522u
@@ -10,6 +11,27 @@
 #define C_MUTED    0xFF8FA2BCu
 #define C_PURPLE   0xFF8B72FFu
 #define C_ORANGE   0xFFFFB454u
+
+
+static uint16_t rgb565(uint32_t color)
+{
+    uint16_t r = (uint16_t)((color >> 19) & 0x1Fu);
+    uint16_t g = (uint16_t)((color >> 10) & 0x3Fu);
+    uint16_t b = (uint16_t)((color >> 3) & 0x1Fu);
+    return (uint16_t)((r << 11) | (g << 5) | b);
+}
+
+static void draw_rect(unsigned x, unsigned y, unsigned w, unsigned h, uint32_t color)
+{
+    if (bomb_video_ready()) if (bomb_video_ready()) bomb_video_rect(x, y, w, h, color);
+    bomb_fb_rect(x / 2u, y / 2u, w / 2u, h / 2u, rgb565(color));
+}
+
+static void draw_clear(uint32_t color)
+{
+    if (bomb_video_ready()) bomb_video_clear(color);
+    bomb_fb_clear(rgb565(color));
+}
 
 static void icon(unsigned x, unsigned y, uint32_t color, unsigned kind)
 {
@@ -30,9 +52,7 @@ static void icon(unsigned x, unsigned y, uint32_t color, unsigned kind)
 
 void bomb_desktop_draw(void)
 {
-    if (!bomb_video_ready()) return;
-
-    bomb_video_clear(C_BG);
+    draw_clear(C_BG);
 
     /* Abstract blue gradient-style wallpaper. */
     bomb_video_rect(0, 0, 640, 480, C_BG);
