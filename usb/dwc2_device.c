@@ -281,7 +281,7 @@ int bomb_usb_init(void) {
     if(!wait_reg(0x010,1u<<31,1u<<31)) return 0;
     GRSTCTL|=1u;
     if(!wait_reg(0x010,1u,0)) return 0;
-    delay(10000);
+    delay_us(1000u);
     GUSBCFG=(GUSBCFG&~(1u<<29))|(1u<<30);
     delay_us(25000u);
     GRSTCTL=(1u<<5); if(!wait_reg(0x010,1u<<5,0)) return 0;
