@@ -38,12 +38,12 @@ void kernel_main(void) {
     uart_puts("\nBOMB OS booting on Raspberry Pi Zero v1.3...\n");
     if(bomb_video_init()) {
         uart_puts("VideoCore framebuffer: OK (640x480x32)\n");
-        bomb_desktop_draw();
-        uart_puts("BOMB OS desktop drawn.\n");
+        uart_puts("VideoCore framebuffer: ready.\n");
     } else {
         uart_puts("VideoCore framebuffer: FAILED; check HDMI/firmware setup.\n");
-        bomb_fb_test_screen();
     }
+    bomb_desktop_draw();
+    uart_puts("BOMB OS desktop rendered to HDMI and USB framebuffers.\n");
     uart_puts("Starting USB OTG CDC device...\n");
     if (bomb_usb_init()) uart_puts("USB controller ready; waiting for host enumeration.\n");
     else uart_puts("USB controller initialization FAILED; check OTG port and power.\n");
