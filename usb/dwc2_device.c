@@ -110,7 +110,7 @@ static void fifo_read(uint8_t ep,uint8_t *p,uint32_t n) {
     }
 }
 static void arm_setup(void) {
-    DOEPTSIZ(0)=(1u<<29)|(1u<<19)|8u;
+    DOEPTSIZ(0)=(3u<<29)|(1u<<19)|24u;
     DOEPCTL(0)|=EP_CNAK|EP_EPENA;
 }
 static void arm_ep0_status_out(void) {
@@ -150,12 +150,14 @@ static void start_control_data(const uint8_t *p,uint16_t length,uint16_t request
 }
 static void activate_data_endpoints(void) {
     /* Dedicated FIFO 2: 128 words at word offset 256. */
-    R(0x108)=(128u<<16)|256u;
+    R(0x104)=(16u<<16)|256u;
+    R(0x108)=(128u<<16)|272u;
+    DIEPCTL(1)=EP_USBAEP|(3u<<18)|EP_TXFNUM(1)|8u;
     DIEPCTL(2)=EP_USBAEP|EP_EPTYPE_BULK|EP_TXFNUM(2)|64u;
     DOEPCTL(2)=EP_USBAEP|EP_EPTYPE_BULK|64u;
     DIEPTSIZ(2)=0; DOEPTSIZ(2)=64u|(1u<<19);
     DOEPCTL(2)|=EP_CNAK|EP_EPENA;
-    DAINTMSK|=(1u<<2)|(1u<<(16+2));
+    DAINTMSK|=(1u<<1)|(1u<<2)|(1u<<(16+2));
 }
 static void set_configuration(uint8_t value) {
     configured=(value==1);
@@ -217,7 +219,7 @@ static void process_rx(void) {
     if(pkt==6u && ep==0u) {
         uint8_t b[8]={0}; if(count>=8) fifo_read(0,b,8); else if(count) fifo_read(0,b,count);
         for(unsigned i=0;i<8;i++) setup_packet[i]=b[i];
-        handle_setup(); arm_setup();
+        handle_setup(); if(!ep0_out_expected) arm_setup();
     } else if(pkt==2u) {
         if(ep==0u) {
             uint32_t n=count>sizeof(out_packet)?sizeof(out_packet):count;
