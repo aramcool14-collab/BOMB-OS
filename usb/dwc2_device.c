@@ -81,15 +81,19 @@ static const uint8_t product_desc[] = {22,3,'B',0,'O',0,'M',0,'B',0,' ',0,'O',0,
 static const uint8_t serial_desc[] = {10,3,'0',0,'0',0,'0',0,'1',0};
 
 static volatile int usb_ready, configured, ep2_in_done;
-static uint8_t usb_address, pending_address, pending_action;
+static uint8_t pending_address, pending_action;
 static uint8_t setup_packet[8], out_packet[64];
 static uint8_t line_coding[7] = {0x00,0xC2,0x01,0x00,0,0,8};
 static const uint8_t *ctrl_data;
-static uint16_t ctrl_remaining, ctrl_requested;
+static uint16_t ctrl_remaining;
 static uint8_t ctrl_need_zlp, ctrl_data_active;
 static uint8_t ep0_out_expected, ep0_out_received;
 
-static void delay(volatile unsigned n) { while(n--) __asm__ volatile("nop"); }
+#define SYST_CLO REG(0x20003004u)
+static void delay_us(uint32_t us) {
+    uint32_t start=SYST_CLO;
+    while((uint32_t)(SYST_CLO-start)<us) { }
+}
 static int wait_reg(uint32_t off,uint32_t mask,uint32_t val) {
     unsigned n=3000000u;
     while(n--) if((R(off)&mask)==val) return 1;
@@ -144,7 +148,7 @@ static void ep0_stall(void) {
 static uint16_t u16(const uint8_t *p) { return (uint16_t)(p[0]|((uint16_t)p[1]<<8)); }
 static void start_control_data(const uint8_t *p,uint16_t length,uint16_t requested) {
     uint16_t n=length<requested?length:requested;
-    ctrl_data=p; ctrl_remaining=n; ctrl_requested=requested;
+    ctrl_data=p; ctrl_remaining=n;
     ctrl_need_zlp=(n!=0 && n<requested && (n%64u)==0);
     ep0_send_next();
 }
@@ -240,7 +244,7 @@ static void process_rx(void) {
 static void service_interrupts(void) {
     uint32_t pending=GINTSTS&GINTMSK;
     if(pending&GINT_USBRST) {
-        GINTSTS=GINT_USBRST; DCFG&=~(0x7Fu<<4); usb_address=0; configured=0;
+        GINTSTS=GINT_USBRST; DCFG&=~(0x7Fu<<4); configured=0;
         DIEPCTL(0)=EP_USBAEP|64u; DOEPCTL(0)=EP_USBAEP|64u;
         arm_setup();
     }
@@ -254,7 +258,7 @@ static void service_interrupts(void) {
             uint32_t flags=DIEPINT(ep); DIEPINT(ep)=flags;
             if(flags&EP_XFRC) {
                 if(ep==0) {
-                    if(pending_action==1) { DCFG=(DCFG&~(0x7Fu<<4))|((uint32_t)pending_address<<4); usb_address=pending_address; pending_action=0; arm_setup(); }
+                    if(pending_action==1) { DCFG=(DCFG&~(0x7Fu<<4))|((uint32_t)pending_address<<4); pending_action=0; arm_setup(); }
                     else if(pending_action==2) { set_configuration((uint8_t)pending_address); pending_action=0; arm_setup(); }
                     else if(ctrl_data_active) ep0_send_next();
                     else arm_setup();
@@ -271,17 +275,17 @@ static void service_interrupts(void) {
         }
     }
 }
-void bomb_usb_init(void) {
+int bomb_usb_init(void) {
     usb_ready=0; configured=0; ep2_in_done=0; pending_action=0;
     DCTL|=DCTL_SDIS;
-    if(!wait_reg(0x010,1u<<31,1u<<31)) return;
+    if(!wait_reg(0x010,1u<<31,1u<<31)) return 0;
     GRSTCTL|=1u;
-    if(!wait_reg(0x010,1u,0)) return;
+    if(!wait_reg(0x010,1u,0)) return 0;
     delay(10000);
-    GUSBCFG|=(1u<<30);
-    delay(10000);
-    GRSTCTL=(1u<<5); if(!wait_reg(0x010,1u<<5,0)) return;
-    GRSTCTL=(1u<<4); if(!wait_reg(0x010,1u<<4,0)) return;
+    GUSBCFG=(GUSBCFG&~(1u<<29))|(1u<<30);
+    delay_us(25000u);
+    GRSTCTL=(1u<<5); if(!wait_reg(0x010,1u<<5,0)) return 0;
+    GRSTCTL=(1u<<4); if(!wait_reg(0x010,1u<<4,0)) return 0;
     DCFG=(DCFG&~7u)|3u;
     GRXFSIZ=128u; GNPTXFSIZ=(128u<<16)|128u; GDFIFOCFG=(128u<<16)|256u;
     DIEPMSK=EP_XFRC; DOEPMSK=EP_XFRC;
@@ -293,6 +297,7 @@ void bomb_usb_init(void) {
     usb_ready=1;
     DCTL&=~DCTL_SDIS;
     GAHBCFG|=1u;
+    return 1;
 }
 void bomb_usb_poll(void) { if(usb_ready) service_interrupts(); }
 int bomb_usb_configured(void) { return configured; }
