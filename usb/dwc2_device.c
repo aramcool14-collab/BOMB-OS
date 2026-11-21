@@ -75,7 +75,7 @@ static const uint8_t config_desc[] = {
     7,5,0x82,2,64,0,0
 };
 static const uint8_t lang_desc[] = {4,3,0x09,0x04};
-static const uint8_t mfg_desc[] = {18,3,'B',0,'O',0,'M',0,'B',0,' ',0,'O',0,'S',0};
+static const uint8_t mfg_desc[] = {16,3,'B',0,'O',0,'M',0,'B',0,' ',0,'O',0,'S',0};
 static const uint8_t product_desc[] = {22,3,'B',0,'O',0,'M',0,'B',0,' ',0,'O',0,'S',0,' ',0,'P',0,'i',0};
 static const uint8_t serial_desc[] = {10,3,'0',0,'0',0,'0',0,'1',0};
 
@@ -164,7 +164,7 @@ static void activate_data_endpoints(void) {
     DIEPTSIZ(2)=0; DOEPTSIZ(2)=64u|(1u<<19);
     DOEPCTL(2)|=EP_CNAK|EP_EPENA;
     DAINTMSK|=(1u<<1)|(1u<<2)|(1u<<(16+2));
-    DIEPTSIZ(1)=(1u<<19)|sizeof(serial_state);
+    DIEPTSIZ(1)=(2u<<19)|sizeof(serial_state);
     DIEPCTL(1)|=EP_CNAK|EP_EPENA;
     fifo_write(1,serial_state,sizeof(serial_state));
 }
