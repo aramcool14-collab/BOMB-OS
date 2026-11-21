@@ -106,7 +106,7 @@ void bomb_usb_init(void)
     /* Enable endpoint zero as a 64-byte control endpoint. */
     DIEPCTL(0) = EPCTL_USBAEP | (1u << 18) | (1u << 0);
     DOEPCTL(0) = EPCTL_USBAEP | (1u << 18);
-    DOEPTSIZ(0) = (1u << 19) | (1u <<  sup);
+    DOEPTSIZ(0) = (1u << 19) | ((3u << 29) | (1u << 19) | 24u);
     usb_ready = 1;
 
     /* Connect to the USB bus only after the core is configured. */
