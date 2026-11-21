@@ -14,7 +14,7 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist build mkdir build
-set CFLAGS=-mcpu=arm1176jzf-s -marm -mfloat-abi=soft -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -O2 -Wall -Wextra
+set CFLAGS=-mcpu=arm1176jzf-s -marm -mfloat-abi=soft -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-unwind-tables -fno-asynchronous-unwind-tables -O2 -Wall -Wextra
 arm-none-eabi-gcc %CFLAGS% -c kernel\start.S -o build\start.o
 if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c kernel\kernel.c -o build\kernel.o
