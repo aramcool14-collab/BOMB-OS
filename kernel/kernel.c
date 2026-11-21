@@ -53,10 +53,15 @@ void kernel_main(void) {
         bomb_usb_poll();
         if(bomb_usb_configured()) {
             if(frame_wait==0) {
-                bomb_video_copy_rgb565(screen_frame,BOMB_LINK_WIDTH,BOMB_LINK_HEIGHT);
+                if (bomb_video_ready()) {
+                    bomb_video_copy_rgb565(screen_frame,BOMB_LINK_WIDTH,BOMB_LINK_HEIGHT);
+                } else {
+                    const uint16_t *fallback = bomb_fb_data();
+                    for (unsigned i=0;i<BOMB_LINK_WIDTH*BOMB_LINK_HEIGHT;i++) screen_frame[i]=fallback[i];
+                }
                 if(bomb_link_send_frame(usb_write,screen_frame,BOMB_LINK_WIDTH,BOMB_LINK_HEIGHT)==0)
                     uart_puts("BOMB-LINK frame sent.\n");
-                frame_wait=1200000u;
+                frame_wait=50000000u;
             }
         }
         if(frame_wait) frame_wait--;
