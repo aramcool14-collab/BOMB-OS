@@ -179,7 +179,7 @@ internal sealed class ViewerForm : Form
         width = data[4] | (data[5] << 8);
         height = data[6] | (data[7] << 8);
         uint length = (uint)(data[8] | (data[9] << 8) | (data[10] << 16) | (data[11] << 24));
-        if (width < 1 || width > 320 || height < 1 || height > 240 || length != (uint)(width * height * 2))
+        if (width < 1 || width > 640 || height < 1 || height > 480 || length != (uint)(width * height * 2))
         {
             data.RemoveAt(0);
             return false;
