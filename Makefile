@@ -29,8 +29,11 @@ build/desktop.o: desktop/desktop.c desktop/desktop.h display/video.h | build
 build/bomb_link.o: usb/bomb_link.c usb/bomb_link.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/kernel.elf: build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o linker.ld
-	$(CC) $(CFLAGS) $(LDFLAGS) build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o -o $@
+build/dwc2_device.o: usb/dwc2_device.c usb/dwc2_device.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/kernel.elf: build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o build/dwc2_device.o linker.ld
+	$(CC) $(CFLAGS) $(LDFLAGS) build/start.o build/kernel.o build/framebuffer.o build/video.o build/desktop.o build/bomb_link.o build/dwc2_device.o -o $@
 
 build/kernel.img: build/kernel.elf
 	$(OBJCOPY) $< -O binary $@
