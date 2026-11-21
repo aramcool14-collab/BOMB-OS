@@ -35,8 +35,7 @@ arm-none-eabi-objcopy build\kernel.elf -O binary build\kernel.img
 if errorlevel 1 goto failed
 echo.
 echo SUCCESS: BOMB OS built for Raspberry Pi Zero v1.3.
-echo HDMI desktop initialization and UART debug are included.
-echo DWC2 USB controller bring-up code is compiled; CDC enumeration and screen streaming are not ready.
+echo HDMI desktop, UART debug, USB CDC device and BOMB-LINK frame streaming are included.
 pause
 exit /b 0
 :failed
