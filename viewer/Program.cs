@@ -88,7 +88,19 @@ internal sealed class ViewerForm : Form
             readerStop = new CancellationTokenSource();
             connect.Text = "Disconnect";
             status.Text = $"Listening on {portName} at 115200 baud";
-            await Task.Run(() => ReadFrames(readerStop.Token));
+            CancellationToken token = readerStop.Token;
+            _ = Task.Run(() => ReadFrames(token)).ContinueWith(t =>
+            {
+                if (IsDisposed) return;
+                BeginInvoke(new Action(() =>
+                {
+                    if (serial?.IsOpen != true)
+                    {
+                        connect.Text = "Connect";
+                        if (t.IsFaulted) status.Text = "Reader error: " + t.Exception!.GetBaseException().Message;
+                    }
+                }));
+            }, TaskScheduler.Default);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
