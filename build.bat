@@ -25,6 +25,10 @@ arm-none-eabi-gcc %CFLAGS% -c display\video.c -o build\video.o
 if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c desktop\desktop.c -o build\desktop.o
 if errorlevel 1 goto failed
+arm-none-eabi-gcc %CFLAGS% -c desktop\cursor.c -o build\cursor.o
+if errorlevel 1 goto failed
+arm-none-eabi-gcc %CFLAGS% -c input\laptop_input.c -o build\laptop_input.o
+if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c language\bomb_lang.c -o build\bomb_lang.o
 if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c games\arcade.c -o build\arcade.o
@@ -33,7 +37,7 @@ arm-none-eabi-gcc %CFLAGS% -c usb\bomb_link.c -o build\bomb_link.o
 if errorlevel 1 goto failed
 arm-none-eabi-gcc %CFLAGS% -c usb\dwc2_device.c -o build\dwc2_device.o
 if errorlevel 1 goto failed
-arm-none-eabi-gcc %CFLAGS% -nostdlib -nostartfiles -Wl,-T,linker.ld -Wl,--build-id=none build\start.o build\kernel.o build\framebuffer.o build\video.o build\desktop.o build\bomb_lang.o build\arcade.o build\bomb_link.o build\dwc2_device.o -lgcc -o build\kernel.elf
+arm-none-eabi-gcc %CFLAGS% -nostdlib -nostartfiles -Wl,-T,linker.ld -Wl,--build-id=none build\start.o build\kernel.o build\framebuffer.o build\video.o build\desktop.o build\cursor.o build\laptop_input.o build\bomb_lang.o build\arcade.o build\bomb_link.o build\dwc2_device.o -lgcc -o build\kernel.elf
 if errorlevel 1 goto failed
 arm-none-eabi-objcopy build\kernel.elf -O binary build\kernel.img
 if errorlevel 1 goto failed
