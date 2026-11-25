@@ -287,8 +287,14 @@ int bomb_usb_init(void) {
     GRSTCTL|=1u;
     if(!wait_reg(0x010,1u,0)) return 0;
     delay_us(1000u);
-    GUSBCFG=(GUSBCFG&~(1u<<29))|(1u<<30);
+    /*
+     * Force peripheral mode after the core reset.  Do not assume the
+     * mode switch completed just because a delay elapsed: GINTSTS.CMOD
+     * reports the mode actually selected by the DWC2 core.
+     */
+    GUSBCFG=(GUSBCFG&~((1u<<29)|(1u<<30)))|(1u<<30);
     delay_us(25000u);
+    if(!wait_reg(0x014,1u,0u)) return 0; /* GINTSTS.CMOD: 0=device */
     GRSTCTL=(1u<<5); if(!wait_reg(0x010,1u<<5,0)) return 0;
     GRSTCTL=(1u<<4); if(!wait_reg(0x010,1u<<4,0)) return 0;
     DCFG=(DCFG&~7u)|3u;
