@@ -1,0 +1,6 @@
+# Your first BOMB program
+say "Hello from my own BOMB app!"
+set score 10
+add score 5
+say "My score is:"
+print score
