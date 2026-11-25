@@ -88,7 +88,7 @@ void kernel_main(void) {
         if(input_count>0) {
             bomb_input_feed(usb_input_buffer,(unsigned)input_count);
             int mx,my; uint8_t buttons;
-            if(bomb_input_take_mouse(&mx,&my,&buttons)) bomb_desktop_draw_cursor(mx,my);
+            if(bomb_input_take_mouse(&mx,&my,&buttons)) { (void)buttons; bomb_desktop_draw(); bomb_desktop_draw_cursor(mx,my); }
             uint8_t key,pressed;
             while(bomb_input_take_key(&key,&pressed)) {
                 if(pressed && key) { uart_puts("Laptop key event received.\\n"); }
