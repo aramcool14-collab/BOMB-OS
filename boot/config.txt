@@ -1,4 +1,7 @@
 # BOMB OS boot configuration for Raspberry Pi Zero v1.3
+[all]
 arm_64bit=0
 kernel=kernel.img
+kernel_address=0x8000
 enable_uart=1
+boot_delay=1
