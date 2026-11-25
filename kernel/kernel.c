@@ -4,6 +4,8 @@
 #include "../display/framebuffer.h"
 #include "../usb/dwc2_device.h"
 #include "../usb/bomb_link.h"
+#include "../input/laptop_input.h"
+#include "../desktop/cursor.h"
 
 #define MMIO_BASE       0x20000000u
 #define AUX_ENABLES     (*(volatile uint32_t *)(MMIO_BASE + 0x00215004u))
@@ -25,6 +27,7 @@
 #define ACT_LED_BIT     (1u << 15) /* GPIO47, active-low ACT LED on Pi Zero v1.3 */
 
 static uint16_t screen_frame[BOMB_LINK_WIDTH * BOMB_LINK_HEIGHT];
+static uint8_t usb_input_buffer[64];
 static uint32_t led_last_tick;
 static int led_is_on;
 
@@ -81,6 +84,16 @@ void kernel_main(void) {
     for(;;) {
         act_led_heartbeat();
         bomb_usb_poll();
+        int input_count=bomb_usb_read(usb_input_buffer,sizeof(usb_input_buffer));
+        if(input_count>0) {
+            bomb_input_feed(usb_input_buffer,(unsigned)input_count);
+            int mx,my; uint8_t buttons;
+            if(bomb_input_take_mouse(&mx,&my,&buttons)) bomb_desktop_draw_cursor(mx,my);
+            uint8_t key,pressed;
+            while(bomb_input_take_key(&key,&pressed)) {
+                if(pressed && key) { uart_puts("Laptop key event received.\\n"); }
+            }
+        }
         if(bomb_usb_configured()) {
             if(frame_wait==0) {
                 if (bomb_video_ready()) {
