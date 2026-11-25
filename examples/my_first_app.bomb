@@ -1,0 +1,5 @@
+# A first app layout written in BOMB
+make app MyFirstApp
+label "Welcome to my app!"
+button "Press me"
+end
