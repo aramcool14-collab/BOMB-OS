@@ -62,3 +62,42 @@ The viewer expects the BOMB-LINK packet format: a 12-byte `BOMB` header followed
 ## Hardware target
 
 Original Raspberry Pi Zero v1.3 (not Zero 2 W). The USB data port is the OTG port; the PWR IN port is power-only.
+
+
+## Laptop input bridge (experimental)
+
+The Pi's USB CDC device driver now has a receive queue for input packets. The kernel parses a small BOMB Input (BI) packet and draws a pointer on HDMI.
+
+On Windows, install the helper dependencies:
+
+```bat
+py -m pip install pyserial pynput
+```
+
+After the Pi appears as a COM port in Device Manager, run:
+
+```bat
+py tools\laptop_controller.py COM5
+```
+
+Replace COM5 with the actual port. Move the laptop trackpad to move the Pi pointer, click to send mouse-button state, and keyboard events are forwarded. Press ESC to stop the helper.
+
+**Important:** this is experimental. The Pi USB CDC connection has not yet been verified on the physical Raspberry Pi Zero. The pointer is currently a basic overlay; desktop windows, app clicking, and keyboard-driven editor controls are not connected yet. If Windows does not show a COM port, the bridge cannot connect.
+
+## BOMB language preview
+
+BOMB is being developed as a small English-like language. Current interpreter commands include:
+
+```text
+say "Hello!"
+set score 10
+add score 5
+subtract score 2
+print score
+make app MyFirstApp
+label "Welcome!"
+button "Press me"
+end
+```
+
+See `examples/hello.bomb` and `examples/my_first_app.bomb`. Variable storage is currently limited to eight simple integer variables. App layout commands are parsed as app events; the visual app builder/runtime is still under development.
