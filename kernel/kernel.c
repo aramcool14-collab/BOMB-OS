@@ -18,10 +18,39 @@
 #define GPFSEL1         (*(volatile uint32_t *)(MMIO_BASE + 0x00200004u))
 #define GPPUD           (*(volatile uint32_t *)(MMIO_BASE + 0x00200094u))
 #define GPPUDCLK0       (*(volatile uint32_t *)(MMIO_BASE + 0x00200098u))
+#define GPFSEL4         (*(volatile uint32_t *)(MMIO_BASE + 0x00200010u))
+#define GPSET1          (*(volatile uint32_t *)(MMIO_BASE + 0x00200020u))
+#define GPCLR1          (*(volatile uint32_t *)(MMIO_BASE + 0x0020002Cu))
+#define SYST_CLO        (*(volatile uint32_t *)(MMIO_BASE + 0x00003004u))
+#define ACT_LED_BIT     (1u << 15) /* GPIO47, active-low ACT LED on Pi Zero v1.3 */
 
 static uint16_t screen_frame[BOMB_LINK_WIDTH * BOMB_LINK_HEIGHT];
+static uint32_t led_last_tick;
+static int led_is_on;
 
 static void delay(volatile unsigned count) { while (count--) __asm__ volatile("nop"); }
+
+/* A heartbeat on the Pi Zero's onboard ACT LED proves that kernel_main is running. */
+static void act_led_init(void) {
+    GPFSEL4 = (GPFSEL4 & ~(7u << 21)) | (1u << 21); /* GPIO47 output */
+    GPSET1 = ACT_LED_BIT; /* LED off (active-low) */
+    led_last_tick = SYST_CLO;
+    led_is_on = 0;
+}
+static void act_led_heartbeat(void) {
+    uint32_t now = SYST_CLO;
+    if ((uint32_t)(now - led_last_tick) >= 250000u) {
+        led_last_tick = now;
+        if (led_is_on) {
+            GPSET1 = ACT_LED_BIT;
+            led_is_on = 0;
+        } else {
+            GPCLR1 = ACT_LED_BIT;
+            led_is_on = 1;
+        }
+    }
+}
+
 static void uart_init(void) {
     AUX_ENABLES |= 1u; AUX_MU_CNTL=0; AUX_MU_IER=0; AUX_MU_LCR=3; AUX_MU_MCR=0;
     AUX_MU_IIR=0xC6; AUX_MU_BAUD=270;
@@ -34,6 +63,7 @@ static void uart_puts(const char *s) { while(*s){ if(*s=='\n')uart_putc('\r'); u
 static int usb_write(const uint8_t *data,size_t length) { return bomb_usb_write(data,length); }
 
 void kernel_main(void) {
+    act_led_init();
     uart_init();
     uart_puts("\nBOMB OS booting on Raspberry Pi Zero v1.3...\n");
     if(bomb_video_init()) {
@@ -49,6 +79,7 @@ void kernel_main(void) {
     uart_puts("Connect the Pi Zero USB (data/OTG) port to the PC.\n");
     unsigned frame_wait=0;
     for(;;) {
+        act_led_heartbeat();
         bomb_usb_poll();
         if(bomb_usb_configured()) {
             if(frame_wait==0) {
