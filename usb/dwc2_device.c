@@ -82,6 +82,9 @@ static const uint8_t serial_desc[] = {10,3,'0',0,'0',0,'0',0,'1',0};
 static volatile int usb_ready, configured, ep2_in_done;
 static uint8_t pending_address, pending_action;
 static uint8_t setup_packet[8], out_packet[64];
+#define USB_RX_CAPACITY 256u
+static uint8_t usb_rx[USB_RX_CAPACITY];
+static volatile unsigned usb_rx_head, usb_rx_tail;
 static uint8_t line_coding[7] = {0x00,0xC2,0x01,0x00,0,0,8};
 static const uint8_t *ctrl_data;
 static uint16_t ctrl_remaining;
@@ -239,7 +242,16 @@ static void process_rx(void) {
                 if(ep0_out_received>=ep0_out_expected) { ep0_out_expected=0; ep0_status_in(); }
             }
         } else {
-            uint8_t sink[64]; uint32_t n=count>64?64:count; if(n) fifo_read(0,sink,n);
+            uint32_t n=count>64?64:count;
+            if(n) {
+                fifo_read(0,out_packet,n);
+                for(uint32_t i=0;i<n;i++) {
+                    unsigned next=(usb_rx_head+1u)%USB_RX_CAPACITY;
+                    if(next==usb_rx_tail) break;
+                    usb_rx[usb_rx_head]=out_packet[i];
+                    usb_rx_head=next;
+                }
+            }
             DOEPTSIZ(2)=64u|(1u<<19); DOEPCTL(2)|=EP_CNAK|EP_EPENA;
         }
     } else if(count) {
@@ -282,6 +294,7 @@ static void service_interrupts(void) {
 }
 int bomb_usb_init(void) {
     usb_ready=0; configured=0; ep2_in_done=0; pending_action=0;
+    usb_rx_head=0; usb_rx_tail=0;
     DCTL|=DCTL_SDIS;
     if(!wait_reg(0x010,1u<<31,1u<<31)) return 0;
     GRSTCTL|=1u;
@@ -326,4 +339,14 @@ int bomb_usb_write(const uint8_t *data,size_t length) {
         data+=n; length-=n;
     }
     return 0;
+}
+
+int bomb_usb_read(uint8_t *data, size_t capacity) {
+    if (!data || capacity == 0) return 0;
+    size_t count = 0;
+    while (count < capacity && usb_rx_tail != usb_rx_head) {
+        data[count++] = usb_rx[usb_rx_tail];
+        usb_rx_tail = (usb_rx_tail + 1u) % USB_RX_CAPACITY;
+    }
+    return (int)count;
 }
